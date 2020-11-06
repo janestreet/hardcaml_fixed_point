@@ -80,7 +80,13 @@ module Make (B : Comb.S) = struct
     type bits = B.t
     type t = int -> int -> bits -> bits
 
-    let wrap fp ib s = concat_msb_e [ select (get_int fp s) (ib - 1) 0; get_frac fp s ]
+    let wrap fp ib s =
+      let i = get_int fp s in
+      let s =
+        if width i >= ib then s else concat_msb_e [ repeat gnd (ib - width i); s ]
+      in
+      concat_msb_e [ select (get_int fp s) (ib - 1) 0; get_frac fp s ]
+    ;;
 
     let saturate fp ib s =
       let i = get_int fp s in

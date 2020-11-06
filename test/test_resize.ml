@@ -124,3 +124,51 @@ let%expect_test "signed tabular" =
      6 +1.500000 +1 +2 +1 +2 +1 +2 +1 +2 +2 +1
      7 +1.750000 +1 +2 +1 +2 +2 +2 +2 +2 +2 +2 |}]
 ;;
+
+let%expect_test "resize to a larger size" =
+  let test_resize ~i ~f ~i' ~f' v =
+    let fu = Unsigned.create f (Bits.of_int ~width:(i + f) v) in
+    let fu_unsigned_wrap = Unsigned.resize ~overflow:Unsigned.Overflow.wrap fu i' f' in
+    let fu_unsigned_saturate =
+      Unsigned.resize ~overflow:Unsigned.Overflow.saturate fu i' f'
+    in
+    let fs = Signed.create f (Bits.of_int ~width:(i + f) v) in
+    let fs_signed_wrap = Signed.resize ~overflow:Signed.Overflow.wrap fs i' f' in
+    let fs_signed_saturate = Signed.resize ~overflow:Signed.Overflow.saturate fs i' f' in
+    print_s
+      [%message
+        (fu : Unsigned.t)
+          (fu_unsigned_wrap : Unsigned.t)
+          (fu_unsigned_saturate : Unsigned.t)
+          (fs : Signed.t)
+          (fs_signed_wrap : Signed.t)
+          (fs_signed_saturate : Signed.t)]
+  in
+  test_resize ~i:1 ~f:1 ~i':2 ~f':2 3;
+  [%expect
+    {|
+    ((fu                   ((s 11)   (fp 1)))
+     (fu_unsigned_wrap     ((s 0110) (fp 2)))
+     (fu_unsigned_saturate ((s 0110) (fp 2)))
+     (fs                   ((s 11)   (fp 1)))
+     (fs_signed_wrap       ((s 1110) (fp 2)))
+     (fs_signed_saturate   ((s 1110) (fp 2)))) |}];
+  test_resize ~i:4 ~f:3 ~i':6 ~f':3 0b1111000;
+  [%expect
+    {|
+    ((fu                   ((s 1111000)   (fp 3)))
+     (fu_unsigned_wrap     ((s 001111000) (fp 3)))
+     (fu_unsigned_saturate ((s 001111000) (fp 3)))
+     (fs                   ((s 1111000)   (fp 3)))
+     (fs_signed_wrap       ((s 111111000) (fp 3)))
+     (fs_signed_saturate   ((s 111111000) (fp 3)))) |}];
+  test_resize ~i:4 ~f:3 ~i':4 ~f':5 0b1111000;
+  [%expect
+    {|
+    ((fu                   ((s 1111000)   (fp 3)))
+     (fu_unsigned_wrap     ((s 111100000) (fp 5)))
+     (fu_unsigned_saturate ((s 111100000) (fp 5)))
+     (fs                   ((s 1111000)   (fp 3)))
+     (fs_signed_wrap       ((s 111100000) (fp 5)))
+     (fs_signed_saturate   ((s 111100000) (fp 5)))) |}]
+;;
