@@ -2,10 +2,33 @@ module type Round = sig
   type bits
   type t
 
+  (** These are purely directional rounding, to be read as round to the nearest whole
+      fraction specified. For example if we were in base 10 and rounding to 1 decimal
+      place:
+
+      [neg_infinity]:   1.91 -> 1.9; -1.15 -> -1.2; 1.55 -> 1.5
+      [pos_infinity]:   1.91 -> 2.0; -1.15 -> -1.1; 1.55 -> 1.6
+      [to_zero]:        1.91 -> 1.9; -1.15 -> -1.1; 1.55 -> 1.5
+      [away_from_zero]: 1.91 -> 2.0; -1.15 -> -1.2; 1.55 -> 1.6
+  *)
+
   val neg_infinity : t
   val pos_infinity : t
   val to_zero : t
   val away_from_zero : t
+
+  (** The tie_ functions always round to the nearest whole fraction specified, except in
+      the X.5 case which is determined by the function used. [tie_away_from_zero] would
+      match round_nearest in software implementations.
+
+      [tie_to_neg_infinity]: 1.91 -> 1.9; -1.15 -> -1.2; 1.55 -> 1.5
+      [tie_to_pos_infinity]: 1.91 -> 1.9; -1.15 -> -1.1; 1.55 -> 1.6
+      [tie_to_zero]:         1.91 -> 1.9; -1.15 -> -1.1; 1.55 -> 1.5
+      [tie_away_from_zero]:  1.91 -> 1.9; -1.15 -> -1.2; 1.55 -> 1.6
+      [tie_to_nearest_even]: 1.91 -> 1.9; -1.15 -> -1.2; 1.55 -> 1.6
+      [tie_to_nearest_odd]:  1.91 -> 1.9; -1.15 -> -1.1; 1.55 -> 1.5
+  *)
+
   val tie_to_neg_infinity : t
   val tie_to_pos_infinity : t
   val tie_to_zero : t
