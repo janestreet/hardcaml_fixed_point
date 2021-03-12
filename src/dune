@@ -1,2 +1,0 @@
-(library (name hardcaml_fixed_point) (public_name hardcaml_fixed_point)
- (libraries base hardcaml) (preprocess (pps ppx_jane)))

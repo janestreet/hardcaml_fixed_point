@@ -11,10 +11,7 @@ build: [
 ]
 depends: [
   "ocaml" {>= "4.08.0"}
-  "base"
-  "hardcaml"
-  "ppx_jane"
-  "dune"     {>= "2.0.0"}
+  "dune" {>= "2.0.0"}
 ]
 synopsis: "Hardcaml fixed point arithmetic"
 description: "
