@@ -1,3 +1,6 @@
+"Fixed point arithmetic types"
+==============================
+
 # `hardcaml_fixed_point`
 
 A simple fixed point library for Hardcaml.
