@@ -77,14 +77,11 @@ module Make (B : Comb.S) = struct
           ; sign
           ; ~:sign
           ; lsb
-          ; ~:lsb
-            (* round with tie break *)
+          ; ~:lsb (* round with tie break *)
           ]
       in
       mux2 sel floor ceil
     ;;
-
-    let eval f = f
   end
 
   module Overflow = struct
@@ -117,8 +114,6 @@ module Make (B : Comb.S) = struct
         in
         clipped)
     ;;
-
-    let eval f = f
   end
 
   let to_float s =

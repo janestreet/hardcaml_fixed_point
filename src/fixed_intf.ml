@@ -1,6 +1,6 @@
 module type Round = sig
   type bits
-  type t
+  type t = int -> bits -> bits
 
   (** These are purely directional rounding, to be read as round to the nearest whole
       fraction specified. For example if we were in base 10 and rounding to 1 decimal
@@ -36,23 +36,21 @@ module type Round = sig
   val tie_to_nearest_even : t
   val tie_to_nearest_odd : t
   val generic : bits -> t
-  val eval : t -> int -> bits -> bits
 end
 
 module type Overflow = sig
   type bits
-  type t
+  type t = int -> int -> bits -> bits
 
   val wrap : t
   val saturate : t
-  val eval : t -> int -> int -> bits -> bits
 end
 
 module type Fixed_point = sig
   type bits
 
-  module Round : Round with type bits = bits
-  module Overflow : Overflow with type bits = bits
+  module Round : Round with type bits := bits
+  module Overflow : Overflow with type bits := bits
 
   type t [@@deriving sexp_of]
 

@@ -7,7 +7,7 @@ module Signed = Hardcaml_fixed_point.Signed (Bits)
 
 let test
       (type a)
-      (module X : Hardcaml_fixed_point.Fixed with type t = a and type bits = Bits.t)
+      (module X : Hardcaml_fixed_point.Fixed_point with type t = a and type bits = Bits.t)
       width_int_a
       width_frac_a
       a
