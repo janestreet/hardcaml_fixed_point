@@ -4,7 +4,7 @@ open! Expect_test_helpers_base
 module Unsigned = Hardcaml_fixed_point.Unsigned (Bits)
 module Signed = Hardcaml_fixed_point.Signed (Bits)
 
-let sexp_of_unsigned x = [%sexp (x, Unsigned.to_float x : Unsigned.t * float)]
+let sexp_of_unsigned x = [%sexp ((x, Unsigned.to_float x) : Unsigned.t * float)]
 
 let%expect_test "unsigned multiply/divide by 2" =
   let f = Unsigned.of_float 4 3 3.14 in
@@ -83,7 +83,7 @@ let%expect_test "unsigned scale down, past min ip" =
        0.1875))) |}]
 ;;
 
-let sexp_of_signed x = [%sexp (x, Signed.to_float x : Signed.t * float)]
+let sexp_of_signed x = [%sexp ((x, Signed.to_float x) : Signed.t * float)]
 
 let%expect_test "signed scale up, past min fp" =
   let f = Signed.of_float 2 1 (-0.5) in
