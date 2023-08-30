@@ -5,13 +5,13 @@ module Unsigned = Hardcaml_fixed_point.Unsigned (Bits)
 module Signed = Hardcaml_fixed_point.Signed (Bits)
 
 let test_round
-      (type a)
-      (module X : Hardcaml_fixed_point.Fixed_point with type t = a and type bits = Bits.t)
-      width_int_a
-      width_frac_a
-      a
-      width_int_b
-      width_frac_b
+  (type a)
+  (module X : Hardcaml_fixed_point.Fixed_point with type t = a and type bits = Bits.t)
+  width_int_a
+  width_frac_a
+  a
+  width_int_b
+  width_frac_b
   =
   let fx = X.of_float width_int_a width_frac_a a in
   let opfx = X.resize fx width_int_b width_frac_b in
