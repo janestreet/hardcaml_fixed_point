@@ -76,7 +76,8 @@ let%expect_test "unsigned tabular" =
     12 3.000000 3 3 3 3 3 3 3 3 3 3
     13 3.250000 3 4 3 4 3 3 3 3 3 3
     14 3.500000 3 4 3 4 3 4 3 4 4 3
-    15 3.750000 3 4 3 4 4 4 4 4 4 4 |}]
+    15 3.750000 3 4 3 4 4 4 4 4 4 4
+    |}]
 ;;
 
 let signed_rounding_ops =
@@ -122,7 +123,8 @@ let%expect_test "signed tabular" =
      4 +1.000000 +1 +1 +1 +1 +1 +1 +1 +1 +1 +1
      5 +1.250000 +1 +2 +1 +2 +1 +1 +1 +1 +1 +1
      6 +1.500000 +1 +2 +1 +2 +1 +2 +1 +2 +2 +1
-     7 +1.750000 +1 +2 +1 +2 +2 +2 +2 +2 +2 +2 |}]
+     7 +1.750000 +1 +2 +1 +2 +2 +2 +2 +2 +2 +2
+    |}]
 ;;
 
 let%expect_test "resize to a larger size" =
@@ -152,7 +154,8 @@ let%expect_test "resize to a larger size" =
      (fu_unsigned_saturate ((s 0110) (fp 2)))
      (fs                   ((s 11)   (fp 1)))
      (fs_signed_wrap       ((s 1110) (fp 2)))
-     (fs_signed_saturate   ((s 1110) (fp 2)))) |}];
+     (fs_signed_saturate   ((s 1110) (fp 2))))
+    |}];
   test_resize ~i:4 ~f:3 ~i':6 ~f':3 0b1111000;
   [%expect
     {|
@@ -161,7 +164,8 @@ let%expect_test "resize to a larger size" =
      (fu_unsigned_saturate ((s 001111000) (fp 3)))
      (fs                   ((s 1111000)   (fp 3)))
      (fs_signed_wrap       ((s 111111000) (fp 3)))
-     (fs_signed_saturate   ((s 111111000) (fp 3)))) |}];
+     (fs_signed_saturate   ((s 111111000) (fp 3))))
+    |}];
   test_resize ~i:4 ~f:3 ~i':4 ~f':5 0b1111000;
   [%expect
     {|
@@ -170,5 +174,6 @@ let%expect_test "resize to a larger size" =
      (fu_unsigned_saturate ((s 111100000) (fp 5)))
      (fs                   ((s 1111000)   (fp 3)))
      (fs_signed_wrap       ((s 111100000) (fp 5)))
-     (fs_signed_saturate   ((s 111100000) (fp 5)))) |}]
+     (fs_signed_saturate   ((s 111100000) (fp 5))))
+    |}]
 ;;

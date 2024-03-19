@@ -24,7 +24,8 @@ let%expect_test "unsigned multiply/divide by 2" =
      (f_div_2 (
        ((s  0011001)
         (fp 4))
-       1.5625))) |}]
+       1.5625)))
+    |}]
 ;;
 
 let%expect_test "unsigned scale up, past min fp" =
@@ -52,7 +53,8 @@ let%expect_test "unsigned scale up, past min fp" =
      (f_mul_8 (
        ((s  00100)
         (fp 0))
-       4))) |}]
+       4)))
+    |}]
 ;;
 
 let%expect_test "unsigned scale down, past min ip" =
@@ -80,7 +82,8 @@ let%expect_test "unsigned scale down, past min ip" =
      (f_mul_8 (
        ((s  00011)
         (fp 4))
-       0.1875))) |}]
+       0.1875)))
+    |}]
 ;;
 
 let sexp_of_signed x = [%sexp ((x, Signed.to_float x) : Signed.t * float)]
@@ -108,7 +111,8 @@ let%expect_test "signed scale up, past min fp" =
      (f_mul_8 (
        ((s  11100)
         (fp 0))
-       -4))) |}]
+       -4)))
+    |}]
 ;;
 
 let%expect_test "signed scale down, past min ip" =
@@ -134,5 +138,6 @@ let%expect_test "signed scale down, past min ip" =
      (f_mul_8 (
        ((s  11101)
         (fp 4))
-       -0.1875))) |}]
+       -0.1875)))
+    |}]
 ;;
