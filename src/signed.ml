@@ -86,39 +86,48 @@ module Make (B : Comb.S) = struct
 
   module Overflow = struct
     type bits = B.t
-    type t = int -> int -> bits -> bits
+    type t = int -> int -> bits -> (bits, bits) With_valid.t2
 
-    let wrap fp ib s =
-      let i = get_int fp s in
-      let s =
-        if width i >= ib then s else concat_msb_e [ repeat (msb i) (ib - width i); s ]
-      in
-      concat_msb_e [ select (get_int fp s) (ib - 1) 0; get_frac fp s ]
-    ;;
-
-    let saturate fp ib s =
+    let apply ~handle fp ib s =
       let i = get_int fp s in
       let f = get_frac fp s in
       if width i = ib
-      then s
+      then { With_valid.value = s; valid = vdd }
       else if width i < ib
-      then concat_msb_e [ repeat (msb i) (ib - width i); i; f ]
+      then
+        { value =
+            With_zero_width.(
+              concat_msb [ repeat (Some (msb i)) ~count:(ib - width i); Some i; f ]
+              |> to_non_zero_width)
+        ; valid = vdd
+        }
       else (
-        let dropped = select i (width i - 1) ib in
-        let remaining = select i (ib - 1) 0 in
-        let overflow_n = repeat (msb remaining) (width dropped) ==: dropped in
-        let min = reverse (one (ib + fp)) in
-        let max = ~:min in
-        let clipped =
-          mux2 overflow_n (concat_msb_e [ remaining; f ]) (mux2 (msb dropped) min max)
+        let dropped = i.:[width i - 1, ib] in
+        let remaining = i.:[ib - 1, 0] in
+        let overflow_n = repeat (msb remaining) ~count:(width dropped) ==: dropped in
+        let no_overflow_q =
+          With_zero_width.(concat_msb [ Some remaining; f ] |> to_non_zero_width)
         in
-        clipped)
+        let value =
+          (* The only difference in the two overflow types is right here. *)
+          match handle with
+          | `wrap -> (* ignore any potential overflow and wrap. *) no_overflow_q
+          | `saturate ->
+            let min = reverse (one (ib + fp)) in
+            let max = ~:min in
+            let clipped = mux2 overflow_n no_overflow_q (mux2 (msb dropped) min max) in
+            clipped
+        in
+        { value; valid = overflow_n })
     ;;
+
+    let saturate = apply ~handle:`saturate
+    let wrap = apply ~handle:`wrap
   end
 
   let to_float s =
     let fp = 2. **. Float.of_int s.fp in
-    let i = Float.of_int (B.to_sint s.s) in
+    let i = Float.of_int (B.to_signed_int s.s) in
     i /. fp
   ;;
 
@@ -127,7 +136,7 @@ module Make (B : Comb.S) = struct
     then raise_extend n
     else if n = 0
     then s
-    else { s = B.concat_msb [ B.repeat (B.msb s.s) n; s.s ]; fp = s.fp }
+    else { s = B.concat_msb [ repeat (B.msb s.s) ~count:n; s.s ]; fp = s.fp }
   ;;
 
   let select_int s i =
@@ -137,30 +146,30 @@ module Make (B : Comb.S) = struct
       let si = int s in
       let wi = width_int s in
       if i <= wi
-      then B.select si (i - 1) 0
-      else B.concat_msb [ B.repeat (B.msb si) (i - wi); si ])
+      then si.:[i - 1, 0]
+      else B.concat_msb [ B.repeat (B.msb si) ~count:(i - wi); si ])
   ;;
 
   let select_frac s f =
     if f < 0
     then raise_select_frac f
     else if f = 0
-    then B.empty
+    then None
     else (
       let wf = width_frac s in
       if wf = 0
-      then B.zero f
+      then Some (B.zero f)
       else (
         let sf = frac s in
         if f <= wf
-        then B.select sf (wf - 1) (wf - f)
-        else B.concat_msb [ sf; B.zero (f - wf) ]))
+        then Some sf.:[wf - 1, wf - f]
+        else B.With_zero_width.concat_msb [ Some sf; B.With_zero_width.zero (f - wf) ]))
   ;;
 
   let select s i f =
     let i' = select_int s i in
     let f' = select_frac s f in
-    create f (B.concat_msb_e [ i'; f' ])
+    create f B.With_zero_width.(concat_msb [ Some i'; f' ] |> to_non_zero_width)
   ;;
 
   let norm l =
@@ -180,6 +189,20 @@ module Make (B : Comb.S) = struct
     let fp' = Float.of_int fp in
     let fp' = 2.0 **. fp' in
     create fp (B.of_int ~width:(ip + fp) (Int.of_float (f *. fp')))
+  ;;
+
+  let of_float_round_nearest ip fp f =
+    let width = ip - 1 (* sign bit *) + fp in
+    let fp' = Float.of_int fp in
+    let fp' = 2.0 **. fp' in
+    let raw = Float.iround_nearest_exn (f *. fp') in
+    match Float.sign_exn f with
+    | Neg ->
+      let min = -(1 lsl width) in
+      create fp (B.of_int ~width:(ip + fp) (Int.max raw min))
+    | Pos | Zero ->
+      let max = (1 lsl width) - 1 in
+      create fp (B.of_int ~width:(ip + fp) (Int.min raw max))
   ;;
 
   (* basic arithmetic *)
@@ -240,12 +263,18 @@ module Make (B : Comb.S) = struct
   let scale_pow2 = scale_pow2 ~ex:se
 
   (* resize with rounding and saturation control *)
-  let resize ?(round = Round.neg_infinity) ?(overflow = Overflow.wrap) s i f =
+  let resize_with_valid ?(round = Round.neg_infinity) ?(overflow = Overflow.wrap) s i f =
     let i' = width_int s in
     let f' = width_frac s in
     (* perform rounding *)
     let s = if f >= f' then select s i' f else create f (round (f' - f) s.s) in
     (* perform overflow control *)
-    create f (overflow f i s.s)
+    let%tydi { value; valid } = overflow f i s.s in
+    { With_valid.value = create f value; valid }
+  ;;
+
+  let resize ?round ?overflow s i f =
+    let%tydi { value; valid = _ } = resize_with_valid ?round ?overflow s i f in
+    value
   ;;
 end

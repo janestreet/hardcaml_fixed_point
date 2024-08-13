@@ -97,7 +97,9 @@ let signed_rounding_ops =
 let test_signed_table () =
   for i = -8 to 7 do
     let a = Signed.create 2 (Bits.of_int ~width:5 i) in
-    let resize rnd = Signed.resize ~round:rnd a 3 0 |> Signed.signal |> Bits.to_sint in
+    let resize rnd =
+      Signed.resize ~round:rnd a 3 0 |> Signed.signal |> Bits.to_signed_int
+    in
     Stdio.printf "%3i %+f " i (Signed.to_float a);
     List.iter signed_rounding_ops ~f:(fun x -> Stdio.printf "%+i " (resize x));
     Stdio.printf "\n"
@@ -127,25 +129,26 @@ let%expect_test "signed tabular" =
     |}]
 ;;
 
-let%expect_test "resize to a larger size" =
-  let test_resize ~i ~f ~i' ~f' v =
-    let fu = Unsigned.create f (Bits.of_int ~width:(i + f) v) in
-    let fu_unsigned_wrap = Unsigned.resize ~overflow:Unsigned.Overflow.wrap fu i' f' in
-    let fu_unsigned_saturate =
-      Unsigned.resize ~overflow:Unsigned.Overflow.saturate fu i' f'
-    in
-    let fs = Signed.create f (Bits.of_int ~width:(i + f) v) in
-    let fs_signed_wrap = Signed.resize ~overflow:Signed.Overflow.wrap fs i' f' in
-    let fs_signed_saturate = Signed.resize ~overflow:Signed.Overflow.saturate fs i' f' in
-    print_s
-      [%message
-        (fu : Unsigned.t)
-          (fu_unsigned_wrap : Unsigned.t)
-          (fu_unsigned_saturate : Unsigned.t)
-          (fs : Signed.t)
-          (fs_signed_wrap : Signed.t)
-          (fs_signed_saturate : Signed.t)]
+let test_resize ~i ~f ~i' ~f' v =
+  let fu = Unsigned.create f (Bits.of_int ~width:(i + f) v) in
+  let fu_unsigned_wrap = Unsigned.resize ~overflow:Unsigned.Overflow.wrap fu i' f' in
+  let fu_unsigned_saturate =
+    Unsigned.resize ~overflow:Unsigned.Overflow.saturate fu i' f'
   in
+  let fs = Signed.create f (Bits.of_int ~width:(i + f) v) in
+  let fs_signed_wrap = Signed.resize ~overflow:Signed.Overflow.wrap fs i' f' in
+  let fs_signed_saturate = Signed.resize ~overflow:Signed.Overflow.saturate fs i' f' in
+  print_s
+    [%message
+      (fu : Unsigned.t)
+        (fu_unsigned_wrap : Unsigned.t)
+        (fu_unsigned_saturate : Unsigned.t)
+        (fs : Signed.t)
+        (fs_signed_wrap : Signed.t)
+        (fs_signed_saturate : Signed.t)]
+;;
+
+let%expect_test "resize to a larger size" =
   test_resize ~i:1 ~f:1 ~i':2 ~f':2 3;
   [%expect
     {|
@@ -175,5 +178,71 @@ let%expect_test "resize to a larger size" =
      (fs                   ((s 1111000)   (fp 3)))
      (fs_signed_wrap       ((s 111100000) (fp 5)))
      (fs_signed_saturate   ((s 111100000) (fp 5))))
+    |}]
+;;
+
+let%expect_test "test overflow behavior - resize to smaller number of integer bits." =
+  (* Unsigned value is above the new range - wrap just truncates while saturate goes to
+     the max positive value. Signed value is within the new range - both wrap and saturate
+     maintain the same value. *)
+  test_resize ~i:4 ~f:3 ~i':3 ~f':3 0b1111000;
+  [%expect
+    {|
+    ((fu                   ((s 1111000) (fp 3)))
+     (fu_unsigned_wrap     ((s 111000)  (fp 3)))
+     (fu_unsigned_saturate ((s 111111)  (fp 3)))
+     (fs                   ((s 1111000) (fp 3)))
+     (fs_signed_wrap       ((s 111000)  (fp 3)))
+     (fs_signed_saturate   ((s 111000)  (fp 3))))
+    |}];
+  (* Unsigned value is above the new range - wrap just truncates while saturate goes to
+     the max positive value. Signed value is within the new range - both wrap and saturate
+     maintain the same value. *)
+  test_resize ~i:4 ~f:3 ~i':3 ~f':3 0b1110000;
+  [%expect
+    {|
+    ((fu                   ((s 1110000) (fp 3)))
+     (fu_unsigned_wrap     ((s 110000)  (fp 3)))
+     (fu_unsigned_saturate ((s 111111)  (fp 3)))
+     (fs                   ((s 1110000) (fp 3)))
+     (fs_signed_wrap       ((s 110000)  (fp 3)))
+     (fs_signed_saturate   ((s 110000)  (fp 3))))
+    |}];
+  (* Unsigned value is within the new range - wrap and saturate maintain the same value.
+     Signed value is above the new range - wrap just truncates while saturate goes to the
+     max positive value. *)
+  test_resize ~i:4 ~f:3 ~i':3 ~f':3 0b0101001;
+  [%expect
+    {|
+    ((fu                   ((s 0101001) (fp 3)))
+     (fu_unsigned_wrap     ((s 101001)  (fp 3)))
+     (fu_unsigned_saturate ((s 101001)  (fp 3)))
+     (fs                   ((s 0101001) (fp 3)))
+     (fs_signed_wrap       ((s 101001)  (fp 3)))
+     (fs_signed_saturate   ((s 011111)  (fp 3))))
+    |}];
+  (* Unsigned value is above the new range - wrap just truncates and saturate goes to the
+     max positive value. Signed value is below the new range - wrap just truncates and
+     saturate goes to the max negative value. *)
+  test_resize ~i:4 ~f:3 ~i':3 ~f':3 0b1000000;
+  [%expect
+    {|
+    ((fu                   ((s 1000000) (fp 3)))
+     (fu_unsigned_wrap     ((s 000000)  (fp 3)))
+     (fu_unsigned_saturate ((s 111111)  (fp 3)))
+     (fs                   ((s 1000000) (fp 3)))
+     (fs_signed_wrap       ((s 000000)  (fp 3)))
+     (fs_signed_saturate   ((s 100000)  (fp 3))))
+    |}];
+  (* Test zero for completeness - signed and unsigned maintain value. *)
+  test_resize ~i:4 ~f:3 ~i':3 ~f':3 0b0000000;
+  [%expect
+    {|
+    ((fu                   ((s 0000000) (fp 3)))
+     (fu_unsigned_wrap     ((s 000000)  (fp 3)))
+     (fu_unsigned_saturate ((s 000000)  (fp 3)))
+     (fs                   ((s 0000000) (fp 3)))
+     (fs_signed_wrap       ((s 000000)  (fp 3)))
+     (fs_signed_saturate   ((s 000000)  (fp 3))))
     |}]
 ;;

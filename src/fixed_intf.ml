@@ -40,7 +40,7 @@ end
 
 module type Overflow = sig
   type bits
-  type t = int -> int -> bits -> bits
+  type t = int -> int -> bits -> (bits, bits) Hardcaml.With_valid.t2
 
   val wrap : t
   val saturate : t
@@ -48,6 +48,7 @@ end
 
 module type Fixed_point = sig
   type bits
+  type with_zero_width
 
   module Round : Round with type bits := bits
   module Overflow : Overflow with type bits := bits
@@ -87,7 +88,7 @@ module type Fixed_point = sig
 
   (** [select_frac f x] extracts the fractional part, and resizes it to x bits.  Bits
       are dropped from the lsb up, if required. *)
-  val select_frac : t -> int -> bits
+  val select_frac : t -> int -> with_zero_width
 
   (** resizes a fixed type using select_int and select_frac *)
   val select : t -> int -> int -> t
@@ -100,10 +101,16 @@ module type Fixed_point = sig
   val norm2 : t -> t -> t * t
 
   (** create a fixed value with the given number of integer and fractional bits from the
-      floating point value *)
+      floating point value.  Truncate the given floating point value to its nearest
+      fixed point representation. *)
   val of_float : int -> int -> float -> t
 
-  (** adition *)
+  (** create a fixed value with the given number of integer and fractional bits.  The
+      resulting fixed-point value will represent the closest possible approximation to the
+      original floating-point value *)
+  val of_float_round_nearest : int -> int -> float -> t
+
+  (** addition *)
   val ( +: ) : t -> t -> t
 
   (** subtraction *)
@@ -138,7 +145,19 @@ module type Fixed_point = sig
       checking and will extend the underlying number of bits if required. *)
   val scale_pow2 : t -> int -> t
 
-  (** [resize x i f] will resize the integer part to have [i] bits, and fractional part
-      to have [f] bits.  Rounding and overflow control is applied *)
+  (** [resize_with_valid x i f] will resize the integer part to have [i] bits, and
+      fractional part to have [f] bits. Rounding and overflow control is applied, and a
+      valid bit is returned indicating whether the value correctly resized, or is
+      incorrect due to overflow. *)
+  val resize_with_valid
+    :  ?round:Round.t
+    -> ?overflow:Overflow.t
+    -> t
+    -> int
+    -> int
+    -> (bits, t) Hardcaml.With_valid.t2
+
+  (** [resize] is the same as [resize_with_valid], except the [overflow] indicator is
+      dropped silently. *)
   val resize : ?round:Round.t -> ?overflow:Overflow.t -> t -> int -> int -> t
 end

@@ -5,6 +5,7 @@ module Make (B : Comb.S) = struct
   open B
 
   type bits = B.t
+  type with_zero_width = B.With_zero_width.t
 
   type t =
     { s : B.t
@@ -12,13 +13,15 @@ module Make (B : Comb.S) = struct
     }
   [@@deriving sexp_of]
 
-  let get_int fp s = select s (width s - 1) fp
-  let get_frac fp s = if fp = 0 then empty else select s (fp - 1) 0
+  let get_int fp s = s.:[width s - 1, fp]
+  let get_frac fp s = With_zero_width.select (Some s) ~high:(fp - 1) ~low:0
   let floor = get_int
 
   let ceil fp s =
     let ib = width s - fp in
-    let max_frac = concat_msb_e [ zero ib; ones fp ] in
+    let max_frac =
+      With_zero_width.(concat_msb [ zero ib; ones fp ] |> to_non_zero_width)
+    in
     get_int fp (s +: max_frac)
   ;;
 
@@ -35,14 +38,14 @@ module Make (B : Comb.S) = struct
     { s; fp }
   ;;
 
-  let int s = B.select s.s (B.width s.s - 1) s.fp
+  let int s = s.s.:[B.width s.s - 1, s.fp]
 
   let frac s =
     if s.fp < 0
     then raise_s [%message "[frac] fp < 0" (s.fp : int)]
     else if s.fp = 0
     then B.empty
-    else B.select s.s (s.fp - 1) 0
+    else s.s.:[s.fp - 1, 0]
   ;;
 
   let signal s = s.s

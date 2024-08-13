@@ -3,6 +3,7 @@ open Hardcaml
 
 module Make (B : Comb.S) : sig
   type bits = B.t
+  type with_zero_width = B.With_zero_width.t
 
   type t =
     { s : B.t
@@ -11,7 +12,7 @@ module Make (B : Comb.S) : sig
   [@@deriving sexp_of]
 
   val get_int : int -> bits -> bits
-  val get_frac : int -> bits -> bits
+  val get_frac : int -> bits -> with_zero_width
   val floor : int -> bits -> bits
   val ceil : int -> bits -> bits
   val half : int -> bits -> bits

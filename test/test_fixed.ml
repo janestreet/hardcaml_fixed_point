@@ -9,16 +9,17 @@ let%expect_test "Unsigned.create" =
   (* 1 integer bit *)
   let t = Unsigned.create 0 Bits.vdd in
   print_s [%message (t : Unsigned.t)];
-  [%expect {|
+  [%expect
+    {|
     (t (
       (s  1)
       (fp 0)))
     |}];
   (* no integer bits *)
-  require_does_raise [%here] (fun () -> Unsigned.create 1 Bits.vdd);
+  require_does_raise (fun () -> Unsigned.create 1 Bits.vdd);
   [%expect {| "[create] requires at least 1 integer bit" |}];
   (* negative fractional bits dont work *)
-  require_does_raise [%here] (fun () -> Unsigned.create (-1) Bits.vdd);
+  require_does_raise (fun () -> Unsigned.create (-1) Bits.vdd);
   [%expect {| "[create] negative fractional bits not supported" |}]
 ;;
 
@@ -26,16 +27,17 @@ let%expect_test "Signed.create" =
   (* 1 integer bit *)
   let t = Signed.create 0 Bits.vdd in
   print_s [%message (t : Signed.t)];
-  [%expect {|
+  [%expect
+    {|
     (t (
       (s  1)
       (fp 0)))
     |}];
   (* no integer bits *)
-  require_does_raise [%here] (fun () -> Signed.create 1 Bits.vdd);
+  require_does_raise (fun () -> Signed.create 1 Bits.vdd);
   [%expect {| "[create] requires at least 1 integer bit" |}];
   (* negative fractional bits dont work *)
-  require_does_raise [%here] (fun () -> Signed.create (-1) Bits.vdd);
+  require_does_raise (fun () -> Signed.create (-1) Bits.vdd);
   [%expect {| "[create] negative fractional bits not supported" |}]
 ;;
 
@@ -119,41 +121,50 @@ let%expect_test "Unsigned int and frac parts" =
   let int_part, frac_part = Unsigned.select_int x 2, Unsigned.select_frac x 3 in
   print_s
     [%message
-      (int_width : int) (frac_width : int) (int_part : Bits.t) (frac_part : Bits.t)];
+      (int_width : int)
+        (frac_width : int)
+        (int_part : Bits.t)
+        (frac_part : Bits.With_zero_width.t)];
   [%expect
     {|
     ((int_width  2)
      (frac_width 3)
      (int_part   11)
-     (frac_part  000))
+     (frac_part (000)))
     |}];
   (* increase each part by 1 bit *)
   let int_part, frac_part = Unsigned.select_int x 3, Unsigned.select_frac x 4 in
   print_s
     [%message
-      (int_width : int) (frac_width : int) (int_part : Bits.t) (frac_part : Bits.t)];
+      (int_width : int)
+        (frac_width : int)
+        (int_part : Bits.t)
+        (frac_part : Bits.With_zero_width.t)];
   [%expect
     {|
     ((int_width  2)
      (frac_width 3)
      (int_part   011)
-     (frac_part  0000))
+     (frac_part (0000)))
     |}];
   (* decrease each part by 1 bit *)
   let int_part, frac_part = Unsigned.select_int x 1, Unsigned.select_frac x 2 in
   print_s
     [%message
-      (int_width : int) (frac_width : int) (int_part : Bits.t) (frac_part : Bits.t)];
+      (int_width : int)
+        (frac_width : int)
+        (int_part : Bits.t)
+        (frac_part : Bits.With_zero_width.t)];
   [%expect
     {|
     ((int_width  2)
      (frac_width 3)
      (int_part   1)
-     (frac_part  00))
+     (frac_part (00)))
     |}];
-  require_does_raise [%here] (fun () -> Unsigned.select_int x 0);
+  require_does_raise (fun () -> Unsigned.select_int x 0);
   [%expect {| ("[select_int] number of bits <= 0" (i 0)) |}];
-  require_does_raise [%here] (fun () -> Unsigned.select_frac x (-1));
+  require_does_raise (fun () -> Unsigned.select_frac x (-1));
   [%expect {| ("[select_frac] number of bits < 0" (f -1)) |}]
 ;;
 
@@ -163,41 +174,50 @@ let%expect_test "Signed int and frac parts" =
   let int_part, frac_part = Signed.select_int x 2, Signed.select_frac x 3 in
   print_s
     [%message
-      (int_width : int) (frac_width : int) (int_part : Bits.t) (frac_part : Bits.t)];
+      (int_width : int)
+        (frac_width : int)
+        (int_part : Bits.t)
+        (frac_part : Bits.With_zero_width.t)];
   [%expect
     {|
     ((int_width  2)
      (frac_width 3)
      (int_part   11)
-     (frac_part  000))
+     (frac_part (000)))
     |}];
   (* increase each part by 1 bit *)
   let int_part, frac_part = Signed.select_int x 3, Signed.select_frac x 4 in
   print_s
     [%message
-      (int_width : int) (frac_width : int) (int_part : Bits.t) (frac_part : Bits.t)];
+      (int_width : int)
+        (frac_width : int)
+        (int_part : Bits.t)
+        (frac_part : Bits.With_zero_width.t)];
   [%expect
     {|
     ((int_width  2)
      (frac_width 3)
      (int_part   111)
-     (frac_part  0000))
+     (frac_part (0000)))
     |}];
   (* decrease each part by 1 bit *)
   let int_part, frac_part = Signed.select_int x 1, Signed.select_frac x 2 in
   print_s
     [%message
-      (int_width : int) (frac_width : int) (int_part : Bits.t) (frac_part : Bits.t)];
+      (int_width : int)
+        (frac_width : int)
+        (int_part : Bits.t)
+        (frac_part : Bits.With_zero_width.t)];
   [%expect
     {|
     ((int_width  2)
      (frac_width 3)
      (int_part   1)
-     (frac_part  00))
+     (frac_part (00)))
     |}];
-  require_does_raise [%here] (fun () -> Signed.select_int x 0);
+  require_does_raise (fun () -> Signed.select_int x 0);
   [%expect {| ("[select_int] number of bits <= 0" (i 0)) |}];
-  require_does_raise [%here] (fun () -> Signed.select_frac x (-1));
+  require_does_raise (fun () -> Signed.select_frac x (-1));
   [%expect {| ("[select_frac] number of bits < 0" (f -1)) |}]
 ;;
 
