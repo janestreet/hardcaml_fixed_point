@@ -129,55 +129,132 @@ let%expect_test "signed tabular" =
     |}]
 ;;
 
+type unsigned_resize_t = (Bits.t, Unsigned.t) Hardcaml.With_valid.t2 [@@deriving sexp_of]
+type signed_resize_t = (Bits.t, Signed.t) Hardcaml.With_valid.t2 [@@deriving sexp_of]
+
 let test_resize ~i ~f ~i' ~f' v =
   let fu = Unsigned.create f (Bits.of_int ~width:(i + f) v) in
-  let fu_unsigned_wrap = Unsigned.resize ~overflow:Unsigned.Overflow.wrap fu i' f' in
-  let fu_unsigned_saturate =
-    Unsigned.resize ~overflow:Unsigned.Overflow.saturate fu i' f'
+  let fu_unsigned_wrap =
+    Unsigned.resize_with_valid ~overflow:Unsigned.Overflow.wrap fu i' f'
   in
+  let fu_unsigned_saturate =
+    Unsigned.resize_with_valid ~overflow:Unsigned.Overflow.saturate fu i' f'
+  in
+  let fu_round_is_lossless = Unsigned.round_is_lossless fu f' in
   let fs = Signed.create f (Bits.of_int ~width:(i + f) v) in
-  let fs_signed_wrap = Signed.resize ~overflow:Signed.Overflow.wrap fs i' f' in
-  let fs_signed_saturate = Signed.resize ~overflow:Signed.Overflow.saturate fs i' f' in
+  let fs_signed_wrap = Signed.resize_with_valid ~overflow:Signed.Overflow.wrap fs i' f' in
+  let fs_signed_saturate =
+    Signed.resize_with_valid ~overflow:Signed.Overflow.saturate fs i' f'
+  in
+  let fs_round_is_lossless = Signed.round_is_lossless fs f' in
   print_s
     [%message
       (fu : Unsigned.t)
-        (fu_unsigned_wrap : Unsigned.t)
-        (fu_unsigned_saturate : Unsigned.t)
+        (fu_unsigned_wrap : unsigned_resize_t)
+        (fu_unsigned_saturate : unsigned_resize_t)
+        (fu_round_is_lossless : Bits.t)
         (fs : Signed.t)
-        (fs_signed_wrap : Signed.t)
-        (fs_signed_saturate : Signed.t)]
+        (fs_signed_wrap : signed_resize_t)
+        (fs_signed_saturate : signed_resize_t)
+        (fs_round_is_lossless : Bits.t)]
 ;;
 
 let%expect_test "resize to a larger size" =
   test_resize ~i:1 ~f:1 ~i':2 ~f':2 3;
   [%expect
     {|
-    ((fu                   ((s 11)   (fp 1)))
-     (fu_unsigned_wrap     ((s 0110) (fp 2)))
-     (fu_unsigned_saturate ((s 0110) (fp 2)))
-     (fs                   ((s 11)   (fp 1)))
-     (fs_signed_wrap       ((s 1110) (fp 2)))
-     (fs_signed_saturate   ((s 1110) (fp 2))))
+    ((fu (
+       (s  11)
+       (fp 1)))
+     (fu_unsigned_wrap (
+       (valid 1)
+       (value (
+         (s  0110)
+         (fp 2)))))
+     (fu_unsigned_saturate (
+       (valid 1)
+       (value (
+         (s  0110)
+         (fp 2)))))
+     (fu_round_is_lossless 1)
+     (fs (
+       (s  11)
+       (fp 1)))
+     (fs_signed_wrap (
+       (valid 1)
+       (value (
+         (s  1110)
+         (fp 2)))))
+     (fs_signed_saturate (
+       (valid 1)
+       (value (
+         (s  1110)
+         (fp 2)))))
+     (fs_round_is_lossless 1))
     |}];
   test_resize ~i:4 ~f:3 ~i':6 ~f':3 0b1111000;
   [%expect
     {|
-    ((fu                   ((s 1111000)   (fp 3)))
-     (fu_unsigned_wrap     ((s 001111000) (fp 3)))
-     (fu_unsigned_saturate ((s 001111000) (fp 3)))
-     (fs                   ((s 1111000)   (fp 3)))
-     (fs_signed_wrap       ((s 111111000) (fp 3)))
-     (fs_signed_saturate   ((s 111111000) (fp 3))))
+    ((fu (
+       (s  1111000)
+       (fp 3)))
+     (fu_unsigned_wrap (
+       (valid 1)
+       (value (
+         (s  001111000)
+         (fp 3)))))
+     (fu_unsigned_saturate (
+       (valid 1)
+       (value (
+         (s  001111000)
+         (fp 3)))))
+     (fu_round_is_lossless 1)
+     (fs (
+       (s  1111000)
+       (fp 3)))
+     (fs_signed_wrap (
+       (valid 1)
+       (value (
+         (s  111111000)
+         (fp 3)))))
+     (fs_signed_saturate (
+       (valid 1)
+       (value (
+         (s  111111000)
+         (fp 3)))))
+     (fs_round_is_lossless 1))
     |}];
   test_resize ~i:4 ~f:3 ~i':4 ~f':5 0b1111000;
   [%expect
     {|
-    ((fu                   ((s 1111000)   (fp 3)))
-     (fu_unsigned_wrap     ((s 111100000) (fp 5)))
-     (fu_unsigned_saturate ((s 111100000) (fp 5)))
-     (fs                   ((s 1111000)   (fp 3)))
-     (fs_signed_wrap       ((s 111100000) (fp 5)))
-     (fs_signed_saturate   ((s 111100000) (fp 5))))
+    ((fu (
+       (s  1111000)
+       (fp 3)))
+     (fu_unsigned_wrap (
+       (valid 1)
+       (value (
+         (s  111100000)
+         (fp 5)))))
+     (fu_unsigned_saturate (
+       (valid 1)
+       (value (
+         (s  111100000)
+         (fp 5)))))
+     (fu_round_is_lossless 1)
+     (fs (
+       (s  1111000)
+       (fp 3)))
+     (fs_signed_wrap (
+       (valid 1)
+       (value (
+         (s  111100000)
+         (fp 5)))))
+     (fs_signed_saturate (
+       (valid 1)
+       (value (
+         (s  111100000)
+         (fp 5)))))
+     (fs_round_is_lossless 1))
     |}]
 ;;
 
@@ -188,12 +265,34 @@ let%expect_test "test overflow behavior - resize to smaller number of integer bi
   test_resize ~i:4 ~f:3 ~i':3 ~f':3 0b1111000;
   [%expect
     {|
-    ((fu                   ((s 1111000) (fp 3)))
-     (fu_unsigned_wrap     ((s 111000)  (fp 3)))
-     (fu_unsigned_saturate ((s 111111)  (fp 3)))
-     (fs                   ((s 1111000) (fp 3)))
-     (fs_signed_wrap       ((s 111000)  (fp 3)))
-     (fs_signed_saturate   ((s 111000)  (fp 3))))
+    ((fu (
+       (s  1111000)
+       (fp 3)))
+     (fu_unsigned_wrap (
+       (valid 0)
+       (value (
+         (s  111000)
+         (fp 3)))))
+     (fu_unsigned_saturate (
+       (valid 0)
+       (value (
+         (s  111111)
+         (fp 3)))))
+     (fu_round_is_lossless 1)
+     (fs (
+       (s  1111000)
+       (fp 3)))
+     (fs_signed_wrap (
+       (valid 1)
+       (value (
+         (s  111000)
+         (fp 3)))))
+     (fs_signed_saturate (
+       (valid 1)
+       (value (
+         (s  111000)
+         (fp 3)))))
+     (fs_round_is_lossless 1))
     |}];
   (* Unsigned value is above the new range - wrap just truncates while saturate goes to
      the max positive value. Signed value is within the new range - both wrap and saturate
@@ -201,12 +300,34 @@ let%expect_test "test overflow behavior - resize to smaller number of integer bi
   test_resize ~i:4 ~f:3 ~i':3 ~f':3 0b1110000;
   [%expect
     {|
-    ((fu                   ((s 1110000) (fp 3)))
-     (fu_unsigned_wrap     ((s 110000)  (fp 3)))
-     (fu_unsigned_saturate ((s 111111)  (fp 3)))
-     (fs                   ((s 1110000) (fp 3)))
-     (fs_signed_wrap       ((s 110000)  (fp 3)))
-     (fs_signed_saturate   ((s 110000)  (fp 3))))
+    ((fu (
+       (s  1110000)
+       (fp 3)))
+     (fu_unsigned_wrap (
+       (valid 0)
+       (value (
+         (s  110000)
+         (fp 3)))))
+     (fu_unsigned_saturate (
+       (valid 0)
+       (value (
+         (s  111111)
+         (fp 3)))))
+     (fu_round_is_lossless 1)
+     (fs (
+       (s  1110000)
+       (fp 3)))
+     (fs_signed_wrap (
+       (valid 1)
+       (value (
+         (s  110000)
+         (fp 3)))))
+     (fs_signed_saturate (
+       (valid 1)
+       (value (
+         (s  110000)
+         (fp 3)))))
+     (fs_round_is_lossless 1))
     |}];
   (* Unsigned value is within the new range - wrap and saturate maintain the same value.
      Signed value is above the new range - wrap just truncates while saturate goes to the
@@ -214,12 +335,34 @@ let%expect_test "test overflow behavior - resize to smaller number of integer bi
   test_resize ~i:4 ~f:3 ~i':3 ~f':3 0b0101001;
   [%expect
     {|
-    ((fu                   ((s 0101001) (fp 3)))
-     (fu_unsigned_wrap     ((s 101001)  (fp 3)))
-     (fu_unsigned_saturate ((s 101001)  (fp 3)))
-     (fs                   ((s 0101001) (fp 3)))
-     (fs_signed_wrap       ((s 101001)  (fp 3)))
-     (fs_signed_saturate   ((s 011111)  (fp 3))))
+    ((fu (
+       (s  0101001)
+       (fp 3)))
+     (fu_unsigned_wrap (
+       (valid 1)
+       (value (
+         (s  101001)
+         (fp 3)))))
+     (fu_unsigned_saturate (
+       (valid 1)
+       (value (
+         (s  101001)
+         (fp 3)))))
+     (fu_round_is_lossless 1)
+     (fs (
+       (s  0101001)
+       (fp 3)))
+     (fs_signed_wrap (
+       (valid 0)
+       (value (
+         (s  101001)
+         (fp 3)))))
+     (fs_signed_saturate (
+       (valid 0)
+       (value (
+         (s  011111)
+         (fp 3)))))
+     (fs_round_is_lossless 1))
     |}];
   (* Unsigned value is above the new range - wrap just truncates and saturate goes to the
      max positive value. Signed value is below the new range - wrap just truncates and
@@ -227,22 +370,169 @@ let%expect_test "test overflow behavior - resize to smaller number of integer bi
   test_resize ~i:4 ~f:3 ~i':3 ~f':3 0b1000000;
   [%expect
     {|
-    ((fu                   ((s 1000000) (fp 3)))
-     (fu_unsigned_wrap     ((s 000000)  (fp 3)))
-     (fu_unsigned_saturate ((s 111111)  (fp 3)))
-     (fs                   ((s 1000000) (fp 3)))
-     (fs_signed_wrap       ((s 000000)  (fp 3)))
-     (fs_signed_saturate   ((s 100000)  (fp 3))))
+    ((fu (
+       (s  1000000)
+       (fp 3)))
+     (fu_unsigned_wrap (
+       (valid 0)
+       (value (
+         (s  000000)
+         (fp 3)))))
+     (fu_unsigned_saturate (
+       (valid 0)
+       (value (
+         (s  111111)
+         (fp 3)))))
+     (fu_round_is_lossless 1)
+     (fs (
+       (s  1000000)
+       (fp 3)))
+     (fs_signed_wrap (
+       (valid 0)
+       (value (
+         (s  000000)
+         (fp 3)))))
+     (fs_signed_saturate (
+       (valid 0)
+       (value (
+         (s  100000)
+         (fp 3)))))
+     (fs_round_is_lossless 1))
     |}];
   (* Test zero for completeness - signed and unsigned maintain value. *)
   test_resize ~i:4 ~f:3 ~i':3 ~f':3 0b0000000;
   [%expect
     {|
-    ((fu                   ((s 0000000) (fp 3)))
-     (fu_unsigned_wrap     ((s 000000)  (fp 3)))
-     (fu_unsigned_saturate ((s 000000)  (fp 3)))
-     (fs                   ((s 0000000) (fp 3)))
-     (fs_signed_wrap       ((s 000000)  (fp 3)))
-     (fs_signed_saturate   ((s 000000)  (fp 3))))
+    ((fu (
+       (s  0000000)
+       (fp 3)))
+     (fu_unsigned_wrap (
+       (valid 1)
+       (value (
+         (s  000000)
+         (fp 3)))))
+     (fu_unsigned_saturate (
+       (valid 1)
+       (value (
+         (s  000000)
+         (fp 3)))))
+     (fu_round_is_lossless 1)
+     (fs (
+       (s  0000000)
+       (fp 3)))
+     (fs_signed_wrap (
+       (valid 1)
+       (value (
+         (s  000000)
+         (fp 3)))))
+     (fs_signed_saturate (
+       (valid 1)
+       (value (
+         (s  000000)
+         (fp 3)))))
+     (fs_round_is_lossless 1))
+    |}]
+;;
+
+let%expect_test "test overflow behavior - resize number of fractional bits." =
+  (* All cases are not exact because we are dropping a bit at the bottom. *)
+  test_resize ~i:4 ~f:3 ~i':4 ~f':2 0b0000111;
+  [%expect
+    {|
+    ((fu (
+       (s  0000111)
+       (fp 3)))
+     (fu_unsigned_wrap (
+       (valid 1)
+       (value (
+         (s  000011)
+         (fp 2)))))
+     (fu_unsigned_saturate (
+       (valid 1)
+       (value (
+         (s  000011)
+         (fp 2)))))
+     (fu_round_is_lossless 0)
+     (fs (
+       (s  0000111)
+       (fp 3)))
+     (fs_signed_wrap (
+       (valid 1)
+       (value (
+         (s  000011)
+         (fp 2)))))
+     (fs_signed_saturate (
+       (valid 1)
+       (value (
+         (s  000011)
+         (fp 2)))))
+     (fs_round_is_lossless 0))
+    |}];
+  (* All of the cases are exact because the lowest bit is a 0. *)
+  test_resize ~i:4 ~f:3 ~i':4 ~f':2 0b0000110;
+  [%expect
+    {|
+    ((fu (
+       (s  0000110)
+       (fp 3)))
+     (fu_unsigned_wrap (
+       (valid 1)
+       (value (
+         (s  000011)
+         (fp 2)))))
+     (fu_unsigned_saturate (
+       (valid 1)
+       (value (
+         (s  000011)
+         (fp 2)))))
+     (fu_round_is_lossless 1)
+     (fs (
+       (s  0000110)
+       (fp 3)))
+     (fs_signed_wrap (
+       (valid 1)
+       (value (
+         (s  000011)
+         (fp 2)))))
+     (fs_signed_saturate (
+       (valid 1)
+       (value (
+         (s  000011)
+         (fp 2)))))
+     (fs_round_is_lossless 1))
+    |}];
+  (* All of the cases are exact because we are increasing the number of fractional bits.
+  *)
+  test_resize ~i:4 ~f:3 ~i':4 ~f':4 0b0000111;
+  [%expect
+    {|
+    ((fu (
+       (s  0000111)
+       (fp 3)))
+     (fu_unsigned_wrap (
+       (valid 1)
+       (value (
+         (s  00001110)
+         (fp 4)))))
+     (fu_unsigned_saturate (
+       (valid 1)
+       (value (
+         (s  00001110)
+         (fp 4)))))
+     (fu_round_is_lossless 1)
+     (fs (
+       (s  0000111)
+       (fp 3)))
+     (fs_signed_wrap (
+       (valid 1)
+       (value (
+         (s  00001110)
+         (fp 4)))))
+     (fs_signed_saturate (
+       (valid 1)
+       (value (
+         (s  00001110)
+         (fp 4)))))
+     (fs_round_is_lossless 1))
     |}]
 ;;

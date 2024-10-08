@@ -145,6 +145,11 @@ module type Fixed_point = sig
       checking and will extend the underlying number of bits if required. *)
   val scale_pow2 : t -> int -> t
 
+  (** [round_is_lossless] checks whether the bottom fractional bits, which will be dropped
+      on resize, are all 0 - if so, the round is actually exact and won't result in any
+      change to the underlying numerical value represented by this fixed-point object. *)
+  val round_is_lossless : t -> int -> bits
+
   (** [resize_with_valid x i f] will resize the integer part to have [i] bits, and
       fractional part to have [f] bits. Rounding and overflow control is applied, and a
       valid bit is returned indicating whether the value correctly resized, or is

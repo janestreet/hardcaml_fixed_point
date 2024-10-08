@@ -2,7 +2,7 @@ open! Base
 open Hardcaml
 
 module Make (B : Comb.S) : sig
-  type bits = B.t
+  type bits = B.t [@@deriving sexp_of]
   type with_zero_width = B.With_zero_width.t
 
   type t =
@@ -27,4 +27,5 @@ module Make (B : Comb.S) : sig
   val raise_select_int : int -> 'a
   val raise_select_frac : int -> 'a
   val scale_pow2 : ex:(bits -> bits) -> t -> int -> t
+  val round_is_lossless : t -> int -> bits
 end

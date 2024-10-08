@@ -4,7 +4,7 @@ open Hardcaml
 module Make (B : Comb.S) = struct
   open B
 
-  type bits = B.t
+  type bits = B.t [@@deriving sexp_of]
   type with_zero_width = B.With_zero_width.t
 
   type t =
@@ -95,5 +95,10 @@ module Make (B : Comb.S) = struct
     else if pow2 > 0
     then scale_up_pow2 x pow2
     else scale_down_pow2 ~ex x pow2
+  ;;
+
+  let round_is_lossless t new_f =
+    let old_f = width_frac t in
+    if new_f >= old_f then vdd else sel_bottom (frac t) ~width:(old_f - new_f) ==:. 0
   ;;
 end
