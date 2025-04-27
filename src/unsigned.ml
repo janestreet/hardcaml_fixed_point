@@ -123,7 +123,7 @@ module Make (B : Comb.S) = struct
 
   let to_float s =
     let fp = 2. **. Float.of_int s.fp in
-    let i = Float.of_int (B.to_int s.s) in
+    let i = Float.of_int (B.to_int_trunc s.s) in
     i /. fp
   ;;
 
@@ -182,7 +182,7 @@ module Make (B : Comb.S) = struct
   let of_float ip fp f =
     let fp' = Float.of_int fp in
     let fp' = 2.0 **. fp' in
-    create fp (B.of_int ~width:(ip + fp) (Int.of_float (f *. fp')))
+    create fp (B.of_int_trunc ~width:(ip + fp) (Int.of_float (f *. fp')))
   ;;
 
   let of_float_round_nearest ip fp f =
@@ -190,7 +190,7 @@ module Make (B : Comb.S) = struct
     let fp' = 2.0 **. fp' in
     let raw = Float.iround_nearest_exn (f *. fp') in
     let max = (1 lsl (ip + fp)) - 1 in
-    create fp (B.of_int ~width:(ip + fp) (Int.min raw max))
+    create fp (B.of_int_trunc ~width:(ip + fp) (Int.min raw max))
   ;;
 
   (* basic arithmetic *)
