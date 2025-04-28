@@ -49,8 +49,10 @@ let unsigned_rounding_ops =
 
 let test_unsigned_table () =
   for i = 0 to 15 do
-    let a = Unsigned.create 2 (Bits.of_int ~width:5 i) in
-    let resize rnd = Unsigned.resize ~round:rnd a 3 0 |> Unsigned.signal |> Bits.to_int in
+    let a = Unsigned.create 2 (Bits.of_int_trunc ~width:5 i) in
+    let resize rnd =
+      Unsigned.resize ~round:rnd a 3 0 |> Unsigned.signal |> Bits.to_int_trunc
+    in
     Stdio.printf "%3i %f " i (Unsigned.to_float a);
     List.iter unsigned_rounding_ops ~f:(fun x -> Stdio.printf "%i " (resize x));
     Stdio.printf "\n"
@@ -96,7 +98,7 @@ let signed_rounding_ops =
 
 let test_signed_table () =
   for i = -8 to 7 do
-    let a = Signed.create 2 (Bits.of_int ~width:5 i) in
+    let a = Signed.create 2 (Bits.of_int_trunc ~width:5 i) in
     let resize rnd =
       Signed.resize ~round:rnd a 3 0 |> Signed.signal |> Bits.to_signed_int
     in
@@ -133,7 +135,7 @@ type unsigned_resize_t = (Bits.t, Unsigned.t) Hardcaml.With_valid.t2 [@@deriving
 type signed_resize_t = (Bits.t, Signed.t) Hardcaml.With_valid.t2 [@@deriving sexp_of]
 
 let test_resize ~i ~f ~i' ~f' v =
-  let fu = Unsigned.create f (Bits.of_int ~width:(i + f) v) in
+  let fu = Unsigned.create f (Bits.of_int_trunc ~width:(i + f) v) in
   let fu_unsigned_wrap =
     Unsigned.resize_with_valid ~overflow:Unsigned.Overflow.wrap fu i' f'
   in
@@ -141,7 +143,7 @@ let test_resize ~i ~f ~i' ~f' v =
     Unsigned.resize_with_valid ~overflow:Unsigned.Overflow.saturate fu i' f'
   in
   let fu_round_is_lossless = Unsigned.round_is_lossless fu f' in
-  let fs = Signed.create f (Bits.of_int ~width:(i + f) v) in
+  let fs = Signed.create f (Bits.of_int_trunc ~width:(i + f) v) in
   let fs_signed_wrap = Signed.resize_with_valid ~overflow:Signed.Overflow.wrap fs i' f' in
   let fs_signed_saturate =
     Signed.resize_with_valid ~overflow:Signed.Overflow.saturate fs i' f'

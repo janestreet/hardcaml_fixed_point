@@ -15,7 +15,7 @@ let test_of_float_round_nearest
   (module Fixed_point : Fixed_point with type bits = Bits.t)
   =
   List.iter examples ~f:(fun f ->
-    let one = Bits.of_int ~width:(integer_bits + fractional_bits) 1 in
+    let one = Bits.of_int_trunc ~width:(integer_bits + fractional_bits) 1 in
     let ulp = Fixed_point.create fractional_bits one in
     let f_hardcaml = Fixed_point.of_float_round_nearest integer_bits fractional_bits f in
     (* Compare the error of the float chosen against that of the value one ULP (unit
@@ -82,9 +82,9 @@ let%expect_test "[of_float_round_nearest] signed and unsigned quickcheck" =
   let test_signed ~integer_bits ~fractional_bits =
     let width = integer_bits + fractional_bits in
     let max = (1 lsl (integer_bits - 1 + fractional_bits)) - 1 in
-    let max_value = Signed.create fractional_bits (Bits.of_int ~width max) in
+    let max_value = Signed.create fractional_bits (Bits.of_int_trunc ~width max) in
     let min = -(max + 1) in
-    let min_value = Signed.create fractional_bits (Bits.of_int ~width min) in
+    let min_value = Signed.create fractional_bits (Bits.of_int_trunc ~width min) in
     test_quickcheck_of_float_round_nearest
       ~lo:(Signed.to_float min_value)
       ~hi:(Signed.to_float max_value)
@@ -95,7 +95,7 @@ let%expect_test "[of_float_round_nearest] signed and unsigned quickcheck" =
   let test_unsigned ~integer_bits ~fractional_bits =
     let width = integer_bits + fractional_bits in
     let max = (1 lsl width) - 1 in
-    let max_value = Unsigned.create fractional_bits (Bits.of_int ~width max) in
+    let max_value = Unsigned.create fractional_bits (Bits.of_int_trunc ~width max) in
     test_quickcheck_of_float_round_nearest
       ~lo:0.
       ~hi:(Unsigned.to_float max_value)

@@ -2,7 +2,8 @@ module type Round = sig
   type bits
   type t = int -> bits -> bits
 
-  (** These are purely directional rounding, to be read as round to the nearest whole
+  (** {v
+ These are purely directional rounding, to be read as round to the nearest whole
       fraction specified. For example if we were in base 10 and rounding to 1 decimal
       place:
 
@@ -10,14 +11,15 @@ module type Round = sig
       [pos_infinity]:   1.91 -> 2.0; -1.15 -> -1.1; 1.55 -> 1.6
       [to_zero]:        1.91 -> 1.9; -1.15 -> -1.1; 1.55 -> 1.5
       [away_from_zero]: 1.91 -> 2.0; -1.15 -> -1.2; 1.55 -> 1.6
-  *)
+      v} *)
 
   val neg_infinity : t
   val pos_infinity : t
   val to_zero : t
   val away_from_zero : t
 
-  (** The tie_ functions always round to the nearest whole fraction specified, except in
+  (** {v
+ The tie_ functions always round to the nearest whole fraction specified, except in
       the X.5 case which is determined by the function used. [tie_away_from_zero] would
       match round_nearest in software implementations.
 
@@ -27,7 +29,7 @@ module type Round = sig
       [tie_away_from_zero]:  1.91 -> 1.9; -1.15 -> -1.2; 1.55 -> 1.6
       [tie_to_nearest_even]: 1.91 -> 1.9; -1.15 -> -1.2; 1.55 -> 1.6
       [tie_to_nearest_odd]:  1.91 -> 1.9; -1.15 -> -1.1; 1.55 -> 1.5
-  *)
+      v} *)
 
   val tie_to_neg_infinity : t
   val tie_to_pos_infinity : t
@@ -55,8 +57,8 @@ module type Fixed_point = sig
 
   type t [@@deriving sexp_of]
 
-  (** create a fixed point value. [create f x] will have [f] fractional bits. [width x -
-      f] will be the number of integer bits *)
+  (** create a fixed point value. [create f x] will have [f] fractional bits.
+      [width x - f] will be the number of integer bits *)
   val create : int -> bits -> t
 
   (** return the integer part of the value *)
@@ -82,12 +84,12 @@ module type Fixed_point = sig
   (** convert fixed point value to a float *)
   val to_float : t -> float
 
-  (** [select_int f x] extracts the integer part, and resizes it to x bits.  Bits are
+  (** [select_int f x] extracts the integer part, and resizes it to x bits. Bits are
       dropped from the msb down, if required. *)
   val select_int : t -> int -> bits
 
-  (** [select_frac f x] extracts the fractional part, and resizes it to x bits.  Bits
-      are dropped from the lsb up, if required. *)
+  (** [select_frac f x] extracts the fractional part, and resizes it to x bits. Bits are
+      dropped from the lsb up, if required. *)
   val select_frac : t -> int -> with_zero_width
 
   (** resizes a fixed type using select_int and select_frac *)
@@ -101,11 +103,11 @@ module type Fixed_point = sig
   val norm2 : t -> t -> t * t
 
   (** create a fixed value with the given number of integer and fractional bits from the
-      floating point value.  Truncate the given floating point value to its nearest
-      fixed point representation. *)
+      floating point value. Truncate the given floating point value to its nearest fixed
+      point representation. *)
   val of_float : int -> int -> float -> t
 
-  (** create a fixed value with the given number of integer and fractional bits.  The
+  (** create a fixed value with the given number of integer and fractional bits. The
       resulting fixed-point value will represent the closest possible approximation to the
       original floating-point value *)
   val of_float_round_nearest : int -> int -> float -> t
