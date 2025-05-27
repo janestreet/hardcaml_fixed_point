@@ -1,5 +1,5 @@
-"Fixed point arithmetic types"
-==============================
+Fixed point type
+================
 
 # `hardcaml_fixed_point`
 
