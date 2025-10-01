@@ -142,6 +142,8 @@ module type Fixed_point = sig
   (** multiplexor *)
   val mux : bits -> t list -> t
 
+  val mux2 : bits -> t -> t -> t
+
   (** [scale_pow2 t x] will compute [t * (2 ^ x)], allowing for multiplication or division
       by a power of 2. Equivalent to a left or right bit shift but also does boundary
       checking and will extend the underlying number of bits if required. *)
