@@ -248,6 +248,7 @@ module Make (B : Comb.S) = struct
     create fp q
   ;;
 
+  let mux2 sel a b = mux sel [ b; a ]
   let scale_pow2 = scale_pow2 ~ex:ue
 
   (* resize with rounding and saturation control *)
