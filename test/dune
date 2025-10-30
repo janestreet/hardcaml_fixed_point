@@ -1,6 +1,6 @@
 (library
  (name hardcaml_fixed_point_test)
- (libraries base stdio expect_test_helpers_core.expect_test_helpers_base
-   hardcaml hardcaml_fixed_point)
+ (libraries base expect_test_helpers_core.expect_test_helpers_base hardcaml
+   hardcaml_fixed_point stdio)
  (preprocess
   (pps ppx_jane)))
