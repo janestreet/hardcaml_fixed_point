@@ -18,8 +18,8 @@ let test_of_float_round_nearest
     let one = Bits.of_int_trunc ~width:(integer_bits + fractional_bits) 1 in
     let ulp = Fixed_point.create fractional_bits one in
     let f_hardcaml = Fixed_point.of_float_round_nearest integer_bits fractional_bits f in
-    (* Compare the error of the float chosen against that of the value one ULP (unit
-       of least precision) above and below.
+    (* Compare the error of the float chosen against that of the value one ULP (unit of
+       least precision) above and below.
 
        The float chosen should be the one with the smallest error. *)
     let f_hi = Fixed_point.( +: ) f_hardcaml ulp in
