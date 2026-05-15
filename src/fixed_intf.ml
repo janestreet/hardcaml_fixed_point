@@ -55,7 +55,7 @@ module type Fixed_point = sig
   module Round : Round with type bits := bits
   module Overflow : Overflow with type bits := bits
 
-  type t [@@deriving sexp_of]
+  type t [@@deriving sexp_of, equal]
 
   (** create a fixed point value. [create f x] will have [f] fractional bits.
       [width x - f] will be the number of integer bits *)

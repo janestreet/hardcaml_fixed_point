@@ -123,7 +123,7 @@ module Make (B : Comb.S) = struct
 
   let to_float s =
     let fp = 2. **. Float.of_int s.fp in
-    let i = Float.of_int (B.to_int_trunc s.s) in
+    let i = Bigint.to_float (B.to_bigint ~signedness:Unsigned s.s) in
     i /. fp
   ;;
 
@@ -188,9 +188,12 @@ module Make (B : Comb.S) = struct
   let of_float_round_nearest ip fp f =
     let fp' = Float.of_int fp in
     let fp' = 2.0 **. fp' in
-    let raw = Float.iround_nearest_exn (f *. fp') in
-    let max = (1 lsl (ip + fp)) - 1 in
-    create fp (B.of_int_trunc ~width:(ip + fp) (Int.min raw max))
+    let raw = Bigint.of_float (Float.round_nearest (f *. fp')) in
+    let w = ip + fp in
+    let max = Bigint.((one lsl w) - one) in
+    match Float.sign_exn f with
+    | Neg -> create fp (B.zero (ip + fp))
+    | Pos | Zero -> create fp (B.of_bigint_trunc ~width:(ip + fp) (Bigint.min raw max))
   ;;
 
   (* basic arithmetic *)

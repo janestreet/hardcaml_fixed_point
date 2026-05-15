@@ -78,35 +78,49 @@ let test_quickcheck_of_float_round_nearest
     end)
 ;;
 
+let quickcheck_signed ~integer_bits ~fractional_bits =
+  let width = integer_bits + fractional_bits in
+  let max = Bigint.((one lsl Int.O.(integer_bits - 1 + fractional_bits)) - one) in
+  let max_value = Signed.create fractional_bits (Bits.of_signed_bigint ~width max) in
+  let min = Bigint.neg (Bigint.( + ) max Bigint.one) in
+  let min_value = Signed.create fractional_bits (Bits.of_signed_bigint ~width min) in
+  test_quickcheck_of_float_round_nearest
+    ~lo:(Signed.to_float min_value)
+    ~hi:(Signed.to_float max_value)
+    ~integer_bits
+    ~fractional_bits
+    (module Signed)
+;;
+
+let quickcheck_unsigned ~integer_bits ~fractional_bits =
+  let width = integer_bits + fractional_bits in
+  let max = Bigint.((one lsl width) - one) in
+  let max_value = Unsigned.create fractional_bits (Bits.of_unsigned_bigint ~width max) in
+  test_quickcheck_of_float_round_nearest
+    ~lo:0.
+    ~hi:(Unsigned.to_float max_value)
+    ~integer_bits
+    ~fractional_bits
+    (module Unsigned)
+;;
+
 let%expect_test "[of_float_round_nearest] signed and unsigned quickcheck" =
-  let test_signed ~integer_bits ~fractional_bits =
-    let width = integer_bits + fractional_bits in
-    let max = (1 lsl (integer_bits - 1 + fractional_bits)) - 1 in
-    let max_value = Signed.create fractional_bits (Bits.of_int_trunc ~width max) in
-    let min = -(max + 1) in
-    let min_value = Signed.create fractional_bits (Bits.of_int_trunc ~width min) in
-    test_quickcheck_of_float_round_nearest
-      ~lo:(Signed.to_float min_value)
-      ~hi:(Signed.to_float max_value)
-      ~integer_bits
-      ~fractional_bits
-      (module Signed)
-  in
-  let test_unsigned ~integer_bits ~fractional_bits =
-    let width = integer_bits + fractional_bits in
-    let max = (1 lsl width) - 1 in
-    let max_value = Unsigned.create fractional_bits (Bits.of_int_trunc ~width max) in
-    test_quickcheck_of_float_round_nearest
-      ~lo:0.
-      ~hi:(Unsigned.to_float max_value)
-      ~integer_bits
-      ~fractional_bits
-      (module Unsigned)
-  in
-  test_signed ~integer_bits:20 ~fractional_bits:8;
-  test_signed ~integer_bits:20 ~fractional_bits:7;
-  test_unsigned ~integer_bits:20 ~fractional_bits:8;
-  test_unsigned ~integer_bits:20 ~fractional_bits:7
+  quickcheck_signed ~integer_bits:20 ~fractional_bits:8;
+  quickcheck_signed ~integer_bits:20 ~fractional_bits:7;
+  quickcheck_unsigned ~integer_bits:20 ~fractional_bits:8;
+  quickcheck_unsigned ~integer_bits:20 ~fractional_bits:7;
+  quickcheck_unsigned ~integer_bits:32 ~fractional_bits:32
+;;
+
+let%expect_test "[of_float_round_nearest] signed and unsigned quickcheck on >63 bits" =
+  quickcheck_unsigned ~integer_bits:32 ~fractional_bits:32;
+  quickcheck_unsigned ~integer_bits:40 ~fractional_bits:40;
+  quickcheck_unsigned ~integer_bits:1 ~fractional_bits:65;
+  quickcheck_unsigned ~integer_bits:65 ~fractional_bits:1;
+  quickcheck_signed ~integer_bits:32 ~fractional_bits:32;
+  quickcheck_signed ~integer_bits:40 ~fractional_bits:40;
+  quickcheck_signed ~integer_bits:1 ~fractional_bits:65;
+  quickcheck_signed ~integer_bits:65 ~fractional_bits:1
 ;;
 
 let%expect_test "test near float funkiness boundary" =
