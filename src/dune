@@ -1,6 +1,6 @@
 (library
  (name hardcaml_fixed_point)
  (public_name hardcaml_fixed_point)
- (libraries base hardcaml)
+ (libraries base bignum.bigint hardcaml)
  (preprocess
   (pps ppx_jane)))

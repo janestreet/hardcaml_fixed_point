@@ -11,7 +11,7 @@ module Make (B : Comb.S) = struct
     { s : B.t
     ; fp : int
     }
-  [@@deriving sexp_of]
+  [@@deriving sexp_of, equal]
 
   let get_int fp s = s.:[width s - 1, fp]
   let get_frac fp s = With_zero_width.select (Some s) ~high:(fp - 1) ~low:0
