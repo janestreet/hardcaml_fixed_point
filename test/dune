@@ -3,4 +3,4 @@
  (libraries base bignum.bigint expect_test_helpers_base hardcaml
    hardcaml_fixed_point stdio)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))

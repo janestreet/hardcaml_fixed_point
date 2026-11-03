@@ -3,4 +3,4 @@
  (public_name hardcaml_fixed_point)
  (libraries base bignum.bigint hardcaml)
  (preprocess
-  (pps ppx_jane)))
+  (pps ppx_jane -compare-require-explicit-locality)))
