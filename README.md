@@ -1,6 +1,4 @@
-Fixed point type
-================
-
+# Fixed point type
 # `hardcaml_fixed_point`
 
 A simple fixed point library for Hardcaml.

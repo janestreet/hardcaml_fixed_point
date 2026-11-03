@@ -9,7 +9,7 @@ module Make (B : Comb.S) : sig
     { s : B.t
     ; fp : int
     }
-  [@@deriving sexp_of, equal]
+  [@@deriving sexp_of, equal ~localize]
 
   val get_int : int -> bits -> bits
   val get_frac : int -> bits -> with_zero_width
